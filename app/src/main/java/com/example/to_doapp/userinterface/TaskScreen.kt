@@ -1,7 +1,6 @@
 package com.example.to_doapp.userinterface
 
 import android.app.Application
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -19,6 +18,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.to_doapp.data.Task
 
+enum class TaskFilter {
+    ALL, COMPLETED, PENDING
+}
 
 @Composable
 fun TaskScreen() {
@@ -32,6 +34,9 @@ fun TaskScreen() {
     // Track edit mode
     var editingTask by remember { mutableStateOf<Task?>(null) }
     var editedText by remember { mutableStateOf("") }
+
+    var currentFilter by remember { mutableStateOf(TaskFilter.ALL) }
+
 
     Column(modifier = Modifier.padding(16.dp)) {
         Row {
@@ -54,8 +59,23 @@ fun TaskScreen() {
 
         Spacer(Modifier.height(16.dp))
 
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+        ) {
+            FilterButton("All", currentFilter == TaskFilter.ALL) { currentFilter = TaskFilter.ALL }
+            FilterButton("Completed", currentFilter == TaskFilter.COMPLETED) { currentFilter = TaskFilter.COMPLETED }
+            FilterButton("Pending", currentFilter == TaskFilter.PENDING) { currentFilter = TaskFilter.PENDING }
+        }
+
+        val filteredTasks = when (currentFilter) {
+            TaskFilter.ALL -> tasks
+            TaskFilter.COMPLETED -> tasks.filter { it.isDone }
+            TaskFilter.PENDING -> tasks.filter { !it.isDone }
+        }
+
         LazyColumn {
-            items(tasks) { task ->
+            items(filteredTasks) { task ->
                 if (editingTask?.id == task.id) {
                     // Edit Mode UI
                     Row(
@@ -112,5 +132,17 @@ fun TaskScreen() {
                 }
             }
         }
+    }
+}
+
+@Composable
+fun FilterButton(text: String, selected: Boolean, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+        )
+    ) {
+        Text(text)
     }
 }
